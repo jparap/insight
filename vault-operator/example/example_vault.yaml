@@ -1,0 +1,11 @@
+apiVersion: "vault.security.coreos.com/v1alpha1"
+kind: "VaultService"
+metadata:
+  name: "example"
+spec:
+  nodes: 2
+  baseImage: vault
+  version: "1.4.0"
+  etcdVersion: "3.3.20"
+  clusterDomain: "example.cluster.local"
+  autoUnseal: true # is cluster need to be unlocaked

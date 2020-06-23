@@ -1,0 +1,84 @@
+#provider "aws" {
+#   shared_credentials_file = "/Users/jparap1/terraform/insight/.insightcfg"
+#   region     = "${var.region}"
+#}
+
+#terraform {
+#  backend "s3" {
+#    bucket = "cloudops-tf"
+#    key = "iam.tfstate"
+#    region = "us-west-2"
+#    shared_credentials_file = "/Users/jparap1/terraform/insight/.insightcfg"
+#  }
+#}
+
+/* ecs iam role and policies */
+resource "aws_iam_role" "ecs_role" {
+  name               = "${var.env}-${var.ecs_role_name}-${var.region}"
+  #assume_role_policy = "${file("policies/ecs-role.json")}"
+  assume_role_policy = file("policies/ecs-role.json")
+
+}
+
+/* ec2 container instance role & policy */
+resource "aws_iam_role_policy" "ecs_instance_role_policy" {
+  name     = "${var.env}-ecs_instance_role_policy-${var.region}"
+  policy   = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr:*",
+		"s3:*",
+                "ec2:AuthorizeSecurityGroupIngress",
+		"ec2:*",
+                "ec2:Describe*",
+                "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                "elasticloadbalancing:DeregisterTargets",
+                "elasticloadbalancing:Describe*",
+                "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                "elasticloadbalancing:RegisterTargets",
+                "cloudwatch:DescribeAlarms",
+                "autoscaling:Describe*",
+                "autoscaling:UpdateAutoScalingGroup",
+                "cloudformation:CreateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStack*",
+                "cloudformation:UpdateStack",
+                "cloudwatch:GetMetricStatistics",
+                "ec2:Describe*",
+                "elasticloadbalancing:*",
+                "ecs:*",
+                "iam:ListInstanceProfiles",
+                "iam:ListRoles",
+                "iam:PassRole",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+  		"autoscaling:PutLifecycleHook",
+                "autoscaling:DeleteLifecycleHook",
+                "autoscaling:RecordLifecycleActionHeartbeat",
+                "autoscaling:CompleteLifecycleAction",
+		"sqs:*"
+            ],
+             "Resource": [
+                "*"
+            ]
+        }
+    ]
+
+}
+
+EOF
+  role     = aws_iam_role.ecs_role.id
+}
+
+/**
+ * IAM profile to be used in auto-scaling launch configuration.
+ */
+resource "aws_iam_instance_profile" "ecs" {
+  name = "${var.env}-${var.ecs_instance_profile}-${var.region}"
+  path = "/"
+  role = aws_iam_role.ecs_role.name
+}
